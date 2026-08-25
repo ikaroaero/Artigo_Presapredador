@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel de análises ecológicas</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #edf2f6; color: #17212b;
+            font-family: system-ui, sans-serif; }
+    header { padding: 18px 26px; background: #17324d; color: white; }
+    header h1 { margin: 0 0 4px; font-size: 1.45rem; }
+    header p { margin: 0; opacity: .82; }
+    main { max-width: 1500px; margin: 18px auto; padding: 0 18px; }
+    .controles { display: flex; flex-wrap: wrap; gap: 14px; align-items: end;
+                  padding: 15px; background: white; border-radius: 10px;
+                  box-shadow: 0 2px 10px #0001; }
+    label { display: grid; gap: 5px; font-weight: 650; }
+    select, button { min-width: 230px; padding: 9px 11px; border: 1px solid #b8c2cc;
+                      border-radius: 6px; background: white; font-size: 1rem; }
+    button { min-width: auto; cursor: pointer; }
+    button:hover { background: #e7eef5; }
+    .galeria { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+                gap: 16px; margin-top: 16px; }
+    .cartao { padding: 13px; background: white; border-radius: 10px;
+               box-shadow: 0 2px 10px #0001; text-align: center; }
+    .cartao.pagina { grid-column: 1 / -1; }
+    .cartao h2 { margin: 3px 0 12px; font-size: 1.08rem; }
+    .cartao img { display: block; width: 100%; height: auto; margin: auto; }
+    .cartao iframe { width: 100%; height: 72vh; border: 0; border-radius: 6px; }
+    .acoes { display: flex; justify-content: center; align-items: center;
+              gap: 14px; margin-top: 10px; }
+    .acoes a { color: #135b96; }
+    .vazio { grid-column: 1 / -1; padding: 60px 20px; text-align: center;
+              color: #607080; background: white; border-radius: 10px; }
+    @media (max-width: 530px) { .galeria { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Painel de análises ecológicas</h1>
+    <p>Todos os gráficos e galerias em um único lugar.</p>
+  </header>
+  <main>
+    <section class="controles">
+      <label>Análise <select id="analise"></select></label>
+      <label>Figura <select id="figura"></select></label>
+      <button id="adicionar" type="button">+ Adicionar à comparação</button>
+      <button id="limpar" type="button">Limpar comparação</button>
+    </section>
+    <section id="galeria" class="galeria"></section>
+  </main>
+  <script>
+    const catalogo = [{"analise": "Espécies × tempo", "titulo": "Galeria completa de espécies", "arquivo": "especiesXtempo/index.html", "tipo": "pagina"}, {"analise": "Diagramas de fases", "titulo": "diagrama fases H0.01", "arquivo": "diagramas_fase/diagrama_fases_H0.01.png", "tipo": "imagem"}, {"analise": "Diagramas de fases", "titulo": "diagrama fases H0.50", "arquivo": "diagramas_fase/diagrama_fases_H0.50.png", "tipo": "imagem"}, {"analise": "Diagramas de fases", "titulo": "diagrama fases H0.99", "arquivo": "diagramas_fase/diagrama_fases_H0.99.png", "tipo": "imagem"}, {"analise": "População × rP", "titulo": "populacao x rP W2", "arquivo": "popXrp/populacao_x_rP_W2.png", "tipo": "imagem"}, {"analise": "População × rP", "titulo": "populacao x rP W3", "arquivo": "popXrp/populacao_x_rP_W3.png", "tipo": "imagem"}, {"analise": "População × rP", "titulo": "populacao x rP W4", "arquivo": "popXrp/populacao_x_rP_W4.png", "tipo": "imagem"}, {"analise": "População × rP", "titulo": "populacao x rP W5", "arquivo": "popXrp/populacao_x_rP_W5.png", "tipo": "imagem"}, {"analise": "Comparação de variabilidade", "titulo": "comparacao metodos variabilidade", "arquivo": "comparacao_variabilidade/comparacao_metodos_variabilidade.png", "tipo": "imagem"}];
+    const analise = document.querySelector('#analise');
+    const figura = document.querySelector('#figura');
+    const unicos = valores => [...new Set(valores)];
+    function opcoes(select, valores) {
+      select.replaceChildren(...valores.map(x => new Option(x, x)));
+    }
+    function atualizarFiguras() {
+      const itens = catalogo.filter(x => x.analise === analise.value);
+      figura.replaceChildren(...itens.map((x, i) => new Option(x.titulo, String(i))));
+    }
+    function itemSelecionado() {
+      const itens = catalogo.filter(x => x.analise === analise.value);
+      return itens[Number(figura.value || 0)];
+    }
+    function mensagemVazia() {
+      const galeria = document.querySelector('#galeria');
+      if (!galeria.querySelector('.cartao')) {
+        galeria.innerHTML = '<div class="vazio">Escolha uma figura e clique em “Adicionar à comparação”.</div>';
+      } else {
+        galeria.querySelector('.vazio')?.remove();
+      }
+    }
+    function adicionar() {
+      const item = itemSelecionado();
+      if (!item) return;
+      const galeria = document.querySelector('#galeria');
+      galeria.querySelector('.vazio')?.remove();
+      if (galeria.querySelector(`[data-arquivo="${item.arquivo}"]`)) return;
+
+      const cartao = document.createElement('article');
+      cartao.className = `cartao ${item.tipo}`;
+      cartao.dataset.arquivo = item.arquivo;
+      const titulo = document.createElement('h2');
+      titulo.textContent = `${item.analise} — ${item.titulo}`;
+      if (item.tipo === 'pagina') {
+        const pagina = document.createElement('iframe');
+        pagina.src = item.arquivo;
+        pagina.title = titulo.textContent;
+        cartao.append(titulo, pagina);
+      } else {
+        const imagem = document.createElement('img');
+        imagem.src = item.arquivo;
+        imagem.alt = titulo.textContent;
+        imagem.loading = 'lazy';
+        cartao.append(titulo, imagem);
+      }
+      const acoes = document.createElement('div');
+      acoes.className = 'acoes';
+      const abrir = document.createElement('a');
+      abrir.href = item.arquivo;
+      abrir.target = '_blank';
+      abrir.textContent = 'Abrir separadamente';
+      const remover = document.createElement('button');
+      remover.type = 'button';
+      remover.textContent = 'Remover';
+      remover.addEventListener('click', () => { cartao.remove(); mensagemVazia(); });
+      acoes.append(abrir, remover);
+      cartao.append(acoes);
+      galeria.append(cartao);
+    }
+    analise.addEventListener('change', atualizarFiguras);
+    document.querySelector('#adicionar').addEventListener('click', adicionar);
+    document.querySelector('#limpar').addEventListener('click', () => {
+      document.querySelector('#galeria').replaceChildren();
+      mensagemVazia();
+    });
+    opcoes(analise, unicos(catalogo.map(x => x.analise)));
+    atualizarFiguras();
+    mensagemVazia();
+  </script>
+</body>
+</html>
