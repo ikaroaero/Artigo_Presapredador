@@ -1,0 +1,6 @@
+# Scripts locais de geração/atualização
+baixar.py
+resultados/baixar.py
+
+# Dados auxiliares não exibidos no GitHub Pages
+resultados/**/*.csv
